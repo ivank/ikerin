@@ -20,6 +20,9 @@ export default {
       backgroundImage: {
         'gradient-150deg': 'linear-gradient(150deg, var(--tw-gradient-stops))',
       },
+      content: {
+        mapPin: 'url("/src/assets/map-pin.svg")',
+      },
     },
   },
   plugins: [],

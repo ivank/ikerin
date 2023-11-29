@@ -60,16 +60,18 @@
 <main class="py-20">
   <ol class="grid auto-cols-max auto-rows-fr grid-cols-3 gap-10">
     {#each projects as project, i}
-      <li class="flex flex-col">
+      <li class="group flex flex-col">
         <h2>
           <a href={project.link}>
             <span class="mr-2 font-bold text-ulrtramarine">Project {i + 1}</span> // _{project.title}
           </a>
         </h2>
-        <div class="border-gunmetal mt-3 flex-grow rounded-2xl border bg-ebony">
+        <div
+          class="border-gunmetal mt-3 flex-grow rounded-2xl border bg-ebony shadow-lg transition group-hover:-translate-x-px group-hover:-translate-y-0.5 group-hover:shadow-lavender/10"
+        >
           <a href={project.link}>
             <figure
-              class="border-gunmetal h-48 rounded-t-2xl border-b bg-center bg-no-repeat p-7"
+              class="border-gunmetal h-48 rounded-t-2xl border-b bg-center bg-no-repeat p-7 brightness-[0.8] saturate-[0.8] transition group-hover:brightness-100 group-hover:saturate-100"
               class:bg-contain={project.backgroundSize === 'contain'}
               class:bg-origin-content={project.backgroundSize === 'contain'}
               class:bg-cover={project.backgroundSize === 'cover'}
