@@ -12,6 +12,7 @@ export default {
         blueGrey: '#607B96',
         lavender: '#E5E9F0',
         aquamarine: '#43D9AD',
+        gunmetal: '#1E2D3D',
         apricot: '#FEA55F',
         ulrtramarine: '#5565E8',
         plantation: '#175553',
