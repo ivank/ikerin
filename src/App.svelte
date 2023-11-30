@@ -12,35 +12,41 @@
 </script>
 
 <Router {url}>
-  <div class="bg-ebony p-16 font-code">
+  <div class="bg-ebony p-4 font-code sm:p-16">
     <div class="border-gunmetal flex min-h-full flex-col rounded border bg-midnight font-code text-blueGrey">
       <section class="border-gunmetal grid grid-cols-[1fr_minmax(min-content,theme(screens.lg))_1fr] border-b">
         <div class="hidden h-14 flex-row items-center xl:flex">
-          <div class="px-6">ivan kerin</div>
+          <div class="whitespace-nowrap px-6">ivan kerin</div>
         </div>
         <nav class="flex flex-row">
           <Link class="h-14" to="/" let:active>
             <div
-              class="border-l-gunmetal border-b-apricot bg-gradient-to-t px-6 py-4 text-white hover:from-apricot/10 xl:border-l"
+              class="border-l-gunmetal border-b-apricot bg-gradient-to-t px-6 py-4 hover:from-apricot/10 xl:border-l"
               class:border-b-4={active}
+              class:text-white={active}
             >
-              _hello
+              <span class="hidden sm:inline">_hello</span>
+              <span class="sm:hidden">_hi</span>
             </div>
           </Link>
           <Link class="h-14" to="/experience" let:active>
             <div
               class="border-l-gunmetal border-l border-b-apricot bg-gradient-to-t px-6 py-4 hover:from-apricot/10"
               class:border-b-4={active}
+              class:text-white={active}
             >
-              _experience
+              <span class="hidden sm:inline">_experience</span>
+              <span class="sm:hidden">_exp</span>
             </div>
           </Link>
           <Link class="h-14" to="/projects" let:active>
             <div
               class="border-x-gunmetal border-x border-b-apricot bg-gradient-to-t px-6 py-4 hover:from-apricot/10"
               class:border-b-4={active}
+              class:text-white={active}
             >
-              _projects
+              <span class="hidden sm:inline">_projects</span>
+              <span class="sm:hidden">_prg</span>
             </div>
           </Link>
         </nav>

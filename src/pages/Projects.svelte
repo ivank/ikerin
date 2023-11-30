@@ -57,8 +57,8 @@
   ];
 </script>
 
-<main class="py-20">
-  <ol class="grid auto-cols-max auto-rows-fr grid-cols-3 gap-10">
+<main class="p-4 sm:p-8 lg:p-20 xl:px-0">
+  <ol class="grid auto-cols-max auto-rows-fr grid-cols-1 gap-10 lg:grid-cols-2 xl:grid-cols-3">
     {#each projects as project, i}
       <li class="group flex flex-col">
         <h2>

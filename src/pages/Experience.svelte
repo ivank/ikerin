@@ -107,7 +107,7 @@
     {
       role: 'Sabbatical',
       logo: zenGuruPng,
-      logoHeight: 33,
+      logoHeight: 26,
       description: 'Rest and recharge by traveling around asia. Fool around with some new technologies. Have fun',
       location: 'Asia',
       company: 'Sabbatical',
@@ -181,7 +181,7 @@
   ];
 </script>
 
-<main class="py-20">
+<main class="p-4 sm:p-8 lg:p-20 xl:px-0">
   <ol role="list" class="flex flex-col gap-14">
     {#each experiences as experience}
       <li
