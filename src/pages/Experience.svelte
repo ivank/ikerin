@@ -43,6 +43,7 @@
   import travisSvg from '../assets/tech/travis.svg';
   import typescriptSvg from '../assets/tech/typescript.svg';
   import ubuntuSvg from '../assets/tech/ubuntu.svg';
+  import Tooltip from '../lib/Tooltip.svelte';
 
   interface Tech {
     icon: string;
@@ -189,7 +190,7 @@
       >
         <div>
           <span class="text-ulrtramarine"> {experience.dates.from} - {experience.dates.to} </span> |
-          <a href={experience.companyLink} class="group">
+          <a href={experience.companyLink} class="group relative">
             <img
               class="inline-block align-middle brightness-90 transition-all group-hover:brightness-100"
               style:height="{experience.logoHeight}px"
@@ -198,6 +199,10 @@
               title={experience.company}
             />
             | <span class="align-middle transition-all group-hover:brightness-125">{experience.location}</span>
+
+            <Tooltip>
+              {experience.company}
+            </Tooltip>
           </a>
         </div>
         <h2 class="my-2 text-2xl font-semibold text-lavender">
@@ -215,13 +220,9 @@
                 alt={tech.title}
                 title={tech.title}
               />
-
-              <div
-                role="tooltip"
-                class="invisible absolute -top-2 left-[50%] z-10 inline-block min-w-max -translate-x-[50%] -translate-y-[100%] rounded-md bg-blueGrey px-3 py-2 text-sm font-medium text-white opacity-0 transition-opacity group-hover:visible group-hover:opacity-100"
-              >
+              <Tooltip>
                 {tech.title}
-              </div>
+              </Tooltip>
             </li>
           {/each}
         </ul>
