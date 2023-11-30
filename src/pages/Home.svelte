@@ -2,6 +2,7 @@
   import rivetSvg from '../assets/rivet.svg';
   import splash1Svg from '../assets/splash-1.svg';
   import splash2Svg from '../assets/splash-2.svg';
+  const Game = () => import('../lib/Game.svelte');
 </script>
 
 <main class="flex flex-row justify-stretch py-8 sm:py-20 lg:py-40">
@@ -48,7 +49,11 @@
       <img class="absolute bottom-2 left-2" src={rivetSvg} alt="rivet" width="13" height="13" />
       <img class="absolute bottom-2 right-2" src={rivetSvg} alt="rivet" width="13" height="13" />
       <img class="absolute right-2 top-2" src={rivetSvg} alt="rivet" width="13" height="13" />
-      <canvas class="box-border h-full w-full rounded bg-ebony p-4 shadow shadow-white/50"> </canvas>
+      <div class="box-border h-full w-full rounded bg-ebony shadow shadow-white/50">
+        {#await Game() then module}
+          <svelte:component this={module.default} />
+        {/await}
+      </div>
     </div>
     <img
       class="pointer-events-none absolute -left-28 -top-36 blur-3xl"
