@@ -1,122 +1,82 @@
 <script lang="ts">
-  import { Application, Container, Sprite, Text } from 'pixi.js';
+  import { AnimatedSprite, Application } from 'pixi.js';
   import { onMount } from 'svelte';
   import { keyboardSetup } from './keyboard';
-  import { avoidCollisions, move, slowDownWhenClose } from './engine';
-  import { rotateVector, rand, randBetween, rectIntersecting, accelerate, decelerate } from './math';
-  import type { Actor } from './engine';
+  import { avoidCollisions, move, objectsOutside, toAcceleratedSpeed, toDeceleratedSpeed } from './engine';
+  import { loadAssets, type Car, type RoadTile, type Cow, type Player, type Tree, TYPE, DIRECTION } from './assets';
+  import { rotateVector, rand, randBetween, approach, extrudeRect, rectIntersecting, angleToQuadrant } from './math';
 
   let canvas: HTMLCanvasElement;
 
   const { onKeyDown, onKeyUp, pressedKeys } = keyboardSetup({ keys: ['ArrowLeft', 'ArrowRight', 'ArrowUp'] });
 
-  enum OBSTACLE {
-    COW,
-    TREE,
-    CAR,
-  }
+  const SCREEN_WIDTH = 400;
+  const SCREEN_HEIGHT = 225;
 
-  function spawn(type: OBSTACLE) {
-    const direction = { x: -1, y: 0 };
-    const oppositeDirection = { x: 1, y: 0 };
-    switch (type) {
-      case OBSTACLE.COW:
-        return {
-          value: new Text('COW', { fill: '#FFFFFF' }),
-          direction: rotateVector(direction, rand(Math.PI * 2)),
-          center: { x: 20, y: 10 },
-          speed: 0,
-          sight: 10,
-          topSpeed: rand(0.04, 0.2),
-          acceleration: 0.01,
-          deceleration: 0.1,
-        };
-      case OBSTACLE.TREE:
-        return {
-          value: new Text('TR', { fill: '#FFFFFF' }),
-          direction,
-          center: { x: 10, y: 10 },
-          speed: 0,
-          sight: 0,
-          topSpeed: 0,
-          acceleration: 0,
-          deceleration: 0,
-        };
-      case OBSTACLE.CAR:
-        return {
-          value: new Text('CAR', { fill: '#FFFFFF' }),
-          direction: rotateVector(randBetween([direction, oppositeDirection]), rand(0.2)),
-          center: { x: 20, y: 10 },
-          speed: 1,
-          sight: 50,
-          topSpeed: rand(1, 4),
-          acceleration: 0.2,
-          deceleration: 1,
-        };
-    }
-  }
+  onMount(async () => {
+    const app = new Application({ width: SCREEN_WIDTH, height: SCREEN_HEIGHT, view: canvas });
 
-  onMount(() => {
-    const app = new Application({ width: 400, height: 225, view: canvas });
+    const assets = await loadAssets({ file: '/game/texture.json', width: SCREEN_WIDTH, height: SCREEN_HEIGHT });
+    const player = assets.player({ x: 100, y: SCREEN_HEIGHT / 2 });
+    const viewport = { x: 0, y: 0, width: app.view.width, height: app.view.height };
 
-    const player: Actor<Sprite> = {
-      value: Sprite.from('/vite.svg'),
-      direction: { x: 1, y: 0 },
-      topSpeed: 2,
-      center: { x: 16, y: 16 },
-      acceleration: 0.1,
-      deceleration: 0.2,
-      sight: 10,
-      speed: 0,
-    };
+    let currentTile = assets.tile({ x: -viewport.width });
+    let nextTile: RoadTile;
+    let items: Array<Car | Cow | Player | Tree> = [player, ...currentTile.items];
 
-    const obstacles: Set<Actor<Container>> = new Set();
-    const actors: Set<Actor<Container>> = new Set([player]);
-
-    player.value.x = 0;
-    player.value.y = app.view.height / 2;
-    player.value.pivot.set(16, 16);
-    app.stage.addChild(player.value);
+    app.stage.addChild(...items.map((item) => item.value));
 
     app.ticker.add(() => {
-      if (obstacles.size < 5) {
-        const obstacle = spawn(randBetween([OBSTACLE.CAR]));
-        obstacle.value.x = -app.stage.x + app.view.width - 50;
-        obstacle.value.y = rand(10, app.view.height - 10);
-        obstacles.add(obstacle);
-        actors.add(obstacle);
-        app.stage.addChild(obstacle.value);
+      if (!nextTile && viewport.x + viewport.width + 100 > currentTile.x + currentTile.width) {
+        nextTile = assets.tile({ x: currentTile.x + currentTile.width });
+        items = items.concat(nextTile.items);
+        app.stage.addChild(...nextTile.items.map((item) => item.value));
+      }
+      if (!rectIntersecting(currentTile, viewport)) {
+        currentTile = nextTile;
+        nextTile = undefined;
       }
 
-      avoidCollisions(obstacles);
-      slowDownWhenClose(obstacles, actors);
-      move(actors);
+      const cars = items.filter((item) => item.type === TYPE.CAR) as Car[];
 
-      for (const obstacle of obstacles) {
-        if (
-          !rectIntersecting(obstacle.value, {
-            x: -app.stage.x,
-            y: app.stage.y,
-            width: app.view.width,
-            height: app.view.height,
-          })
-        ) {
-          obstacles.delete(obstacle);
-          actors.delete(obstacle);
-          app.stage.removeChild(obstacle.value);
-        }
+      if (cars.length < 6) {
+        const car = randBetween([
+          assets.car({
+            direction: DIRECTION.LEFT,
+            x: viewport.x + viewport.width * rand(1, 2),
+            y: rand(112, 190),
+            topSpeed: rand(2, 4),
+          }),
+          assets.car({
+            direction: DIRECTION.RIGHT,
+            x: viewport.x - viewport.width * rand(0, 1),
+            y: rand(20, 90),
+            topSpeed: rand(2, 4),
+          }),
+        ]);
+
+        car.value.pivot.set(25, 15);
+        app.stage.addChild(car.value);
+        items.push(car);
       }
 
-      player.value.rotation = Math.atan2(player.direction.y, player.direction.x) - Math.PI / 2;
-      const scrolledX = -player.value.x + 100;
-      const distance = scrolledX - app.stage.x;
-      app.stage.x = Math.abs(distance) < 0.4 ? scrolledX : app.stage.x + distance / 10;
+      const moving = items.filter((item) => item.type == TYPE.PLAYER || item.type === TYPE.CAR) as (Player | Car)[];
+      avoidCollisions(cars, items);
+      move(moving);
+
+      const [inside, outside] = objectsOutside(items, extrudeRect(viewport, viewport.width * 3, viewport.height));
+      items = inside;
+
+      app.stage.removeChild(...outside.map((item) => item.value));
+
+      viewport.x = approach(player.x - 100, viewport.x, 0.05, 0.4);
+      viewport.y = approach(player.y - 112, viewport.y, 0.05, 0.4);
 
       const input = pressedKeys();
       if (input.ArrowUp) {
-        player.speed = accelerate(player);
+        player.speed = toAcceleratedSpeed(player);
       } else {
-        player.speed = decelerate(player);
+        player.speed = toDeceleratedSpeed(player);
       }
 
       if (input.ArrowRight) {
@@ -124,6 +84,16 @@
       }
       if (input.ArrowLeft) {
         player.direction = rotateVector(player.direction, player.speed > 0 ? -0.03 : 0);
+      }
+
+      for (const item of items) {
+        if ('direction' in item && item.value instanceof AnimatedSprite) {
+          const angle = -Math.atan2(item.direction.y, item.direction.x) + 0.125 * Math.PI;
+          const positiveAngle = (angle + 2 * Math.PI) % (2 * Math.PI);
+          item.value.gotoAndStop(angleToQuadrant(positiveAngle, 8));
+        }
+        item.value.x = -viewport.x + item.x - item.value.width / 2;
+        item.value.y = -viewport.y + item.y - item.value.height / 2;
       }
     });
   });
