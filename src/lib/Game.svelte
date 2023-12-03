@@ -1,13 +1,30 @@
 <script lang="ts">
   import { AnimatedSprite, Application } from 'pixi.js';
   import { onMount } from 'svelte';
-  import { keyboardSetup } from './keyboard';
-  import { move, objectsOutside, collisionAvoidanceForces, isMovingObject, approach } from './engine';
-  import { loadAssets, type Car, type RoadTile, type Cow, type Player, type Tree, TYPE, DIRECTION } from './assets';
-  import * as rect from './rect';
-  import * as vec from './vector';
-  import * as circle from './circle';
-  import { rand, randBetween } from './rand';
+  import { keyboardSetup } from './game/keyboard';
+  import {
+    move,
+    objectsOutside,
+    collisionAvoidanceForces,
+    isMovingObject,
+    approach,
+    isPhysicalObject,
+  } from './game/engine';
+  import {
+    loadAssets,
+    type Car,
+    type RoadTile,
+    type Cow,
+    type Player,
+    type Tree,
+    TYPE,
+    DIRECTION,
+    type Road,
+  } from './game/assets';
+  import * as rect from './game/rect';
+  import * as vec from './game/vector';
+  import * as circle from './game/circle';
+  import { rand, randBetween } from './game/rand';
 
   let canvas: HTMLCanvasElement;
 
@@ -25,22 +42,23 @@
 
     let currentTile = assets.tile({ x: -viewport.width });
     let nextTile: RoadTile;
-    let items: Array<Car | Cow | Player | Tree> = [player, ...currentTile.items];
+    let items: Array<Car | Cow | Player | Tree | Road> = [...currentTile.items, player];
 
     app.stage.addChild(...items.map((item) => item.value));
 
     app.ticker.add(() => {
+      const cars = items.filter((item) => item.type === TYPE.CAR) as Car[];
+
       if (!nextTile && viewport.x + viewport.width + 100 > currentTile.x + currentTile.width) {
         nextTile = assets.tile({ x: currentTile.x + currentTile.width });
         items = items.concat(nextTile.items);
         app.stage.addChild(...nextTile.items.map((item) => item.value));
+        app.stage.addChild(...cars.map((item) => item.value), player.value);
       }
       if (!rect.isIntersecting(currentTile, viewport)) {
         currentTile = nextTile;
         nextTile = undefined;
       }
-
-      const cars = items.filter((item) => item.type === TYPE.CAR) as Car[];
 
       if (cars.length < 6) {
         const car = randBetween([
@@ -71,7 +89,7 @@
       app.stage.removeChild(...outside.map((item) => item.value));
 
       viewport.x = approach(player.x - 100, viewport.x, 0.05, 0.4);
-      viewport.y = approach(player.y - 112, viewport.y, 0.05, 0.4);
+      // viewport.y = approach(player.y - 112, viewport.y, 0.05, 0.4);
 
       const input = pressedKeys();
 
@@ -95,8 +113,13 @@
           const positiveAngle = (angle + 2 * Math.PI) % (2 * Math.PI);
           item.value.gotoAndStop(circle.angleToQuadrant(positiveAngle, 8));
         }
-        item.value.x = -viewport.x + item.x - item.value.width / 2;
-        item.value.y = -viewport.y + item.y - item.value.height / 2;
+        if (isPhysicalObject(item)) {
+          item.value.x = -viewport.x + item.x - item.value.width / 2;
+          item.value.y = -viewport.y + item.y - item.value.height / 2;
+        } else {
+          item.value.x = -viewport.x + item.x;
+          item.value.y = -viewport.y + item.y;
+        }
       }
     });
   });

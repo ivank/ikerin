@@ -1,5 +1,5 @@
 import { AnimatedSprite, Assets, Sprite } from 'pixi.js';
-import type { ActorObject, PhysicalObject } from './engine';
+import type { ActorObject, BgObject, PhysicalObject } from './engine';
 import * as vec from './vector';
 import * as rect from './rect';
 import { rand, randBetween } from './rand';
@@ -13,19 +13,23 @@ export enum TYPE {
   TREE,
   CAR,
   PLAYER,
+  ROAD,
 }
 export enum DIRECTION {
   LEFT,
   RIGHT,
 }
 
-export interface Cow extends PhysicalObject, Base<Sprite> {
+export interface Road extends BgObject, Base<AnimatedSprite> {
+  type: TYPE.ROAD;
+}
+export interface Cow extends PhysicalObject, Base<AnimatedSprite> {
   type: TYPE.COW;
 }
-export interface Tree extends PhysicalObject, Base<Sprite> {
+export interface Tree extends PhysicalObject, Base<AnimatedSprite> {
   type: TYPE.TREE;
 }
-export interface Car extends ActorObject, Base<Sprite> {
+export interface Car extends ActorObject, Base<AnimatedSprite> {
   type: TYPE.CAR;
 }
 export interface Player extends ActorObject, Base<AnimatedSprite> {
@@ -34,7 +38,7 @@ export interface Player extends ActorObject, Base<AnimatedSprite> {
   type: TYPE.PLAYER;
 }
 export interface RoadTile extends rect.Rect {
-  items: (Cow | Tree)[];
+  items: (Cow | Tree | Road)[];
 }
 
 function toDirection(value: DIRECTION): vec.Vector {
@@ -49,14 +53,14 @@ function toDirection(value: DIRECTION): vec.Vector {
 export async function loadAssets(opts: { file: string; width: number; height: number }) {
   const sheet = await Assets.load(opts.file);
 
-  function cow({ x = 0, y = 0, radius = 20 } = {}): Cow {
+  function cow({ x = 0, y = 0, radius = 10 } = {}): Cow {
     const value = new AnimatedSprite(sheet.animations.cow);
     value.animationSpeed = 0.1;
     value.play();
     return { type: TYPE.COW, x, y, value, radius };
   }
 
-  function tree({ x = 0, y = 0, radius = 20 } = {}): Tree {
+  function tree({ x = 0, y = 0, radius = 5 } = {}): Tree {
     const value = new AnimatedSprite(sheet.animations.tree);
     value.gotoAndStop(Math.floor(rand(0, 4)));
     return { type: TYPE.TREE, x, y, value, radius };
@@ -93,7 +97,8 @@ export async function loadAssets(opts: { file: string; width: number; height: nu
   }
 
   function tile({ x = 0, y = 0, width = opts.width * 3, height = opts.height }): RoadTile {
-    const items = [
+    const items: Array<Tree | Cow | Road> = [
+      { x, y, width, height, value: new AnimatedSprite(sheet.animations.road), type: TYPE.ROAD },
       ...[...Array(Math.round(rand(20, 30)))].map((_, index, all) =>
         tree({ x: x + (width / all.length) * index + rand(-width / 30, width / 30), y: rand(y, y + 20) }),
       ),
@@ -105,9 +110,10 @@ export async function loadAssets(opts: { file: string; width: number; height: nu
       ),
       cow({
         x: rand(x, width + x),
-        y: randBetween([rand(y, y + 50), rand(y + height - 50, y + height)]),
+        y: randBetween([rand(y + 50, y + 70), rand(y + height - 70, y + height - 50)]),
       }),
     ];
+
     return { x, y, width, height, items };
   }
 

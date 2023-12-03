@@ -6,14 +6,12 @@ export interface Base<TValue> {
   value: TValue;
 }
 
+export interface BgObject extends rect.Rect {}
+
 export interface PhysicalObject extends circle.Circle {}
 
 export interface MovingObject extends PhysicalObject {
   velocity: vec.Vector;
-}
-
-export function isMovingObject(item: PhysicalObject): item is MovingObject {
-  return 'velocity' in item;
 }
 
 export interface ActorObject extends MovingObject {
@@ -21,8 +19,16 @@ export interface ActorObject extends MovingObject {
   sight: number;
 }
 
-export function isActorObject(item: PhysicalObject): item is ActorObject {
+export function isActorObject(item: BgObject | PhysicalObject | MovingObject | ActorObject): item is ActorObject {
   return 'sight' in item;
+}
+
+export function isPhysicalObject(item: BgObject | PhysicalObject | MovingObject | ActorObject): item is PhysicalObject {
+  return 'radius' in item;
+}
+
+export function isMovingObject(item: BgObject | PhysicalObject | MovingObject | ActorObject): item is MovingObject {
+  return 'velocity' in item;
 }
 
 export function move(objects: MovingObject[]) {
@@ -32,11 +38,11 @@ export function move(objects: MovingObject[]) {
   }
 }
 
-export function objectsOutside<T extends PhysicalObject>(objects: T[], viewport: rect.Rect): [T[], T[]] {
+export function objectsOutside<T extends PhysicalObject | BgObject>(objects: T[], viewport: rect.Rect): [T[], T[]] {
   const outside = [];
   const inside = [];
   for (const obj of objects) {
-    if (rect.isIntersectingCircle(obj, viewport)) {
+    if (isPhysicalObject(obj) ? rect.isIntersectingCircle(obj, viewport) : rect.isIntersecting(obj, viewport)) {
       inside.push(obj);
     } else {
       outside.push(obj);
@@ -64,20 +70,23 @@ export function timeToCollision(actor: ActorObject, obj: MovingObject | Physical
   return tau < 0 ? Infinity : tau;
 }
 
-export function collisionAvoidanceForces(actors: ActorObject[], obstacles: (MovingObject | PhysicalObject)[]) {
+export function collisionAvoidanceForces(
+  actors: ActorObject[],
+  obstacles: (MovingObject | PhysicalObject | BgObject)[],
+) {
   for (const actor of actors) {
     const vg = actor.velocityGoal;
     const v = actor.velocity;
     const goalForce = vec.scale(vec.sub(vg, v), 2);
     let force = goalForce;
 
-    for (const neighbor of obstacles.filter((item) => item !== actor)) {
+    for (const neighbor of obstacles.filter(isPhysicalObject).filter((item) => item !== actor)) {
       const t = timeToCollision(actor, neighbor);
 
       if (t === 0) {
         force = vec.add(actor.velocity, vec.scale(vec.rotateFlip(actor.velocity), 0.08));
       } else if (t !== Infinity) {
-        const timeHorizon = isMovingObject(neighbor) ? actor.sight : actor.sight / 4;
+        const timeHorizon = isMovingObject(neighbor) ? actor.sight : actor.sight / 2;
         const neighborV = isMovingObject(neighbor) ? neighbor.velocity : { x: 0, y: 0 };
         let avoidDirection = vec.sub(vec.add(actor, vec.scale(v, t)), neighbor, vec.scale(neighborV, t));
 
