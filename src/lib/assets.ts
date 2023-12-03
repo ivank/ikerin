@@ -1,6 +1,8 @@
 import { AnimatedSprite, Assets, Sprite } from 'pixi.js';
-import { type Pos, type Rect, rand, randBetween } from './math';
 import type { ActorObject, PhysicalObject } from './engine';
+import * as vec from './vector';
+import * as rect from './rect';
+import { rand, randBetween } from './rand';
 
 export interface Base<TValue> {
   value: TValue;
@@ -27,13 +29,15 @@ export interface Car extends ActorObject, Base<Sprite> {
   type: TYPE.CAR;
 }
 export interface Player extends ActorObject, Base<AnimatedSprite> {
+  direction: vec.Vector;
+  speed: number;
   type: TYPE.PLAYER;
 }
-export interface RoadTile extends Rect {
+export interface RoadTile extends rect.Rect {
   items: (Cow | Tree)[];
 }
 
-function toDirection(value: DIRECTION): Pos {
+function toDirection(value: DIRECTION): vec.Vector {
   switch (value) {
     case DIRECTION.LEFT:
       return { x: -1, y: 0 };
@@ -58,21 +62,18 @@ export async function loadAssets(opts: { file: string; width: number; height: nu
     return { type: TYPE.TREE, x, y, value, radius };
   }
 
-  function car({ x = 0, y = 0, direction = DIRECTION.LEFT, topSpeed = 1 }): Car {
+  function car({ x = 0, y = 0, direction = DIRECTION.LEFT, speed = 1 }): Car {
     const value = new AnimatedSprite(sheet.animations.truck);
+    const velocity = vec.scale(toDirection(direction), speed);
     return {
       type: TYPE.CAR,
       x,
       y,
-      radius: 8,
+      radius: 12,
       value,
-      desiredDirection: toDirection(direction),
-      direction: toDirection(direction),
-      speed: topSpeed,
-      sight: 40,
-      topSpeed,
-      acceleration: 0.1,
-      deceleration: 0.3,
+      velocityGoal: velocity,
+      velocity: { ...velocity },
+      sight: 500,
     };
   }
 
@@ -82,14 +83,12 @@ export async function loadAssets(opts: { file: string; width: number; height: nu
       value: new AnimatedSprite(sheet.animations.car),
       x,
       y,
-      desiredDirection: toDirection(direction),
       direction: toDirection(direction),
-      topSpeed: 2,
-      radius: 16,
-      acceleration: 0.1,
-      deceleration: 0.2,
-      sight: 10,
+      velocityGoal: { x: 0, y: 0 },
       speed: 0,
+      velocity: { x: 0, y: 0 },
+      radius: 13,
+      sight: 10,
     };
   }
 

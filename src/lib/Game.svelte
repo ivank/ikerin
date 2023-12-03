@@ -2,9 +2,12 @@
   import { AnimatedSprite, Application } from 'pixi.js';
   import { onMount } from 'svelte';
   import { keyboardSetup } from './keyboard';
-  import { avoidCollisions, move, objectsOutside, toAcceleratedSpeed, toDeceleratedSpeed } from './engine';
+  import { move, objectsOutside, collisionAvoidanceForces, isMovingObject, approach } from './engine';
   import { loadAssets, type Car, type RoadTile, type Cow, type Player, type Tree, TYPE, DIRECTION } from './assets';
-  import { rotateVector, rand, randBetween, approach, extrudeRect, rectIntersecting, angleToQuadrant } from './math';
+  import * as rect from './rect';
+  import * as vec from './vector';
+  import * as circle from './circle';
+  import { rand, randBetween } from './rand';
 
   let canvas: HTMLCanvasElement;
 
@@ -32,7 +35,7 @@
         items = items.concat(nextTile.items);
         app.stage.addChild(...nextTile.items.map((item) => item.value));
       }
-      if (!rectIntersecting(currentTile, viewport)) {
+      if (!rect.isIntersecting(currentTile, viewport)) {
         currentTile = nextTile;
         nextTile = undefined;
       }
@@ -45,26 +48,24 @@
             direction: DIRECTION.LEFT,
             x: viewport.x + viewport.width * rand(1, 2),
             y: rand(112, 190),
-            topSpeed: rand(2, 4),
+            speed: rand(10, 15),
           }),
           assets.car({
             direction: DIRECTION.RIGHT,
             x: viewport.x - viewport.width * rand(0, 1),
             y: rand(20, 90),
-            topSpeed: rand(2, 4),
+            speed: rand(10, 15),
           }),
         ]);
 
-        car.value.pivot.set(25, 15);
         app.stage.addChild(car.value);
         items.push(car);
       }
 
       const moving = items.filter((item) => item.type == TYPE.PLAYER || item.type === TYPE.CAR) as (Player | Car)[];
-      avoidCollisions(cars, items);
-      move(moving);
+      collisionAvoidanceForces(cars, items);
 
-      const [inside, outside] = objectsOutside(items, extrudeRect(viewport, viewport.width * 3, viewport.height));
+      const [inside, outside] = objectsOutside(items, rect.extrude(viewport, viewport.width * 3, viewport.height));
       items = inside;
 
       app.stage.removeChild(...outside.map((item) => item.value));
@@ -73,24 +74,26 @@
       viewport.y = approach(player.y - 112, viewport.y, 0.05, 0.4);
 
       const input = pressedKeys();
-      if (input.ArrowUp) {
-        player.speed = toAcceleratedSpeed(player);
-      } else {
-        player.speed = toDeceleratedSpeed(player);
+
+      if (player.speed > 0) {
+        if (input.ArrowRight) {
+          player.direction = vec.rotate(player.direction, 0.03);
+        }
+        if (input.ArrowLeft) {
+          player.direction = vec.rotate(player.direction, -0.03);
+        }
       }
 
-      if (input.ArrowRight) {
-        player.direction = rotateVector(player.direction, player.speed > 0 ? 0.03 : 0);
-      }
-      if (input.ArrowLeft) {
-        player.direction = rotateVector(player.direction, player.speed > 0 ? -0.03 : 0);
-      }
+      player.speed = input.ArrowUp ? Math.min(2, player.speed + 0.1) : Math.max(0, player.speed - 0.2);
+      player.velocity = vec.scale(player.direction, player.speed);
+
+      move(moving);
 
       for (const item of items) {
-        if ('direction' in item && item.value instanceof AnimatedSprite) {
-          const angle = -Math.atan2(item.direction.y, item.direction.x) + 0.125 * Math.PI;
+        if (isMovingObject(item) && item.value instanceof AnimatedSprite) {
+          const angle = -Math.atan2(item.velocity.y, item.velocity.x) + 0.125 * Math.PI;
           const positiveAngle = (angle + 2 * Math.PI) % (2 * Math.PI);
-          item.value.gotoAndStop(angleToQuadrant(positiveAngle, 8));
+          item.value.gotoAndStop(circle.angleToQuadrant(positiveAngle, 8));
         }
         item.value.x = -viewport.x + item.x - item.value.width / 2;
         item.value.y = -viewport.y + item.y - item.value.height / 2;
