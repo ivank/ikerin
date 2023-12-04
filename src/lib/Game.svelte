@@ -27,17 +27,19 @@
   let canvas: HTMLCanvasElement;
   let app: Application;
 
+  const { onKeyDown, onKeyUp, pressedKeys, toggle } = keyboardSetup({
+    keys: ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'],
+  });
+
   const onResize = (event: UIEvent & { currentTarget: Window }) => {
     if (event.currentTarget.innerWidth < 1280) {
       app?.stop();
+      toggle(false);
     } else {
       app?.start();
+      toggle(true);
     }
   };
-
-  const { onKeyDown, onKeyUp, pressedKeys } = keyboardSetup({
-    keys: ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'],
-  });
 
   const SCREEN_WIDTH = 400;
   const SCREEN_HEIGHT = 225;

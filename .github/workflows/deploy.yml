@@ -1,0 +1,27 @@
+name: Deploy
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v4
+        with:
+          cache: yarn
+      - uses: 'google-github-actions/auth@v2'
+        with:
+          project_id: 'ikerin'
+          credentials_json: '${{ secrets.GOOGLE_CREDENTIALS }}'
+      - run: yarn install
+      - run: yarn test
+      - run: yarn build
+      - uses: 'google-github-actions/upload-cloud-storage@v1'
+        with:
+          path: 'dist'
+          destination: 'ikerin.com'
