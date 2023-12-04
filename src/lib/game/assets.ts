@@ -6,12 +6,13 @@ import { rand, randBetween } from './rand';
 
 export interface Base<TValue> {
   value: TValue;
+  type: TYPE;
 }
 
 export enum TYPE {
   COW,
   TREE,
-  CAR,
+  VEHICLE,
   PLAYER,
   ROAD,
 }
@@ -29,8 +30,8 @@ export interface Cow extends PhysicalObject, Base<AnimatedSprite> {
 export interface Tree extends PhysicalObject, Base<AnimatedSprite> {
   type: TYPE.TREE;
 }
-export interface Car extends ActorObject, Base<AnimatedSprite> {
-  type: TYPE.CAR;
+export interface Vehicle extends ActorObject, Base<AnimatedSprite> {
+  type: TYPE.VEHICLE;
 }
 export interface Player extends ActorObject, Base<AnimatedSprite> {
   direction: vec.Vector;
@@ -66,15 +67,34 @@ export async function loadAssets(opts: { file: string; width: number; height: nu
     return { type: TYPE.TREE, x, y, value, radius };
   }
 
-  function car({ x = 0, y = 0, direction = DIRECTION.LEFT, speed = 1 }): Car {
-    const value = new AnimatedSprite(sheet.animations.truck);
+  function car({ x = 0, y = 0, direction = DIRECTION.LEFT, speed = 1.2 }): Vehicle {
+    const value = new AnimatedSprite(sheet.animations.taxi);
+    value.scale.set(1.3, 1.3);
     const velocity = vec.scale(toDirection(direction), speed);
     return {
-      type: TYPE.CAR,
+      type: TYPE.VEHICLE,
       x,
       y,
-      radius: 12,
+      radius: 5,
       value,
+      direction: toDirection(direction),
+      velocityGoal: velocity,
+      velocity: { ...velocity },
+      sight: 700,
+    };
+  }
+
+  function truck({ x = 0, y = 0, direction = DIRECTION.LEFT, speed = 0.8 }): Vehicle {
+    const value = new AnimatedSprite(sheet.animations.truck);
+    value.scale.set(1.1, 1.1);
+    const velocity = vec.scale(toDirection(direction), speed);
+    return {
+      type: TYPE.VEHICLE,
+      x,
+      y,
+      radius: 6,
+      value,
+      direction: toDirection(direction),
       velocityGoal: velocity,
       velocity: { ...velocity },
       sight: 500,
@@ -84,14 +104,14 @@ export async function loadAssets(opts: { file: string; width: number; height: nu
   function player({ x = 0, y = 0, direction = DIRECTION.RIGHT }): Player {
     return {
       type: TYPE.PLAYER,
-      value: new AnimatedSprite(sheet.animations.car),
+      value: new AnimatedSprite(sheet.animations.rickshaw),
       x,
       y,
       direction: toDirection(direction),
       velocityGoal: { x: 0, y: 0 },
       speed: 0,
       velocity: { x: 0, y: 0 },
-      radius: 13,
+      radius: 6,
       sight: 10,
     };
   }
@@ -117,5 +137,17 @@ export async function loadAssets(opts: { file: string; width: number; height: nu
     return { x, y, width, height, items };
   }
 
-  return { cow, tree, player, car, tile };
+  return { cow, tree, player, car, tile, truck };
+}
+
+export function isVehicle(item: Base<AnimatedSprite>): item is Vehicle {
+  return item.type === TYPE.VEHICLE;
+}
+
+export function isPhysicalAsset(item: Base<AnimatedSprite>): item is Vehicle | Player | Tree | Cow {
+  return item.type === TYPE.VEHICLE || item.type === TYPE.PLAYER || item.type === TYPE.TREE || item.type === TYPE.COW;
+}
+
+export function isMovingAsset(item: Base<AnimatedSprite>): item is Vehicle | Player {
+  return item.type === TYPE.VEHICLE || item.type === TYPE.PLAYER;
 }

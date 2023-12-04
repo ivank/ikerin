@@ -11,15 +11,17 @@
     isPhysicalObject,
   } from './game/engine';
   import {
-    loadAssets,
-    type Car,
     type RoadTile,
     type Cow,
     type Player,
     type Tree,
-    TYPE,
-    DIRECTION,
     type Road,
+    type Vehicle,
+    loadAssets,
+    DIRECTION,
+    isVehicle,
+    isMovingAsset,
+    isPhysicalAsset,
   } from './game/assets';
   import * as rect from './game/rect';
   import * as vec from './game/vector';
@@ -27,14 +29,25 @@
   import { rand, randBetween } from './game/rand';
 
   let canvas: HTMLCanvasElement;
+  let app: Application;
 
-  const { onKeyDown, onKeyUp, pressedKeys } = keyboardSetup({ keys: ['ArrowLeft', 'ArrowRight', 'ArrowUp'] });
+  const onResize = (event: UIEvent & { currentTarget: Window }) => {
+    if (event.currentTarget.innerWidth < 1280) {
+      app?.stop();
+    } else {
+      app?.start();
+    }
+  };
+
+  const { onKeyDown, onKeyUp, pressedKeys } = keyboardSetup({
+    keys: ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'],
+  });
 
   const SCREEN_WIDTH = 400;
   const SCREEN_HEIGHT = 225;
 
   onMount(async () => {
-    const app = new Application({ width: SCREEN_WIDTH, height: SCREEN_HEIGHT, view: canvas });
+    app = new Application({ width: SCREEN_WIDTH, height: SCREEN_HEIGHT, view: canvas });
 
     const assets = await loadAssets({ file: '/game/texture.json', width: SCREEN_WIDTH, height: SCREEN_HEIGHT });
     const player = assets.player({ x: 100, y: SCREEN_HEIGHT / 2 });
@@ -42,26 +55,26 @@
 
     let currentTile = assets.tile({ x: -viewport.width });
     let nextTile: RoadTile;
-    let items: Array<Car | Cow | Player | Tree | Road> = [...currentTile.items, player];
+    let items: Array<Vehicle | Cow | Player | Tree | Road> = [...currentTile.items, player];
 
     app.stage.addChild(...items.map((item) => item.value));
 
     app.ticker.add(() => {
-      const cars = items.filter((item) => item.type === TYPE.CAR) as Car[];
+      const vehicles = items.filter(isVehicle);
 
       if (!nextTile && viewport.x + viewport.width + 100 > currentTile.x + currentTile.width) {
         nextTile = assets.tile({ x: currentTile.x + currentTile.width });
         items = items.concat(nextTile.items);
         app.stage.addChild(...nextTile.items.map((item) => item.value));
-        app.stage.addChild(...cars.map((item) => item.value), player.value);
+        app.stage.addChild(...vehicles.map((item) => item.value), player.value);
       }
       if (!rect.isIntersecting(currentTile, viewport)) {
         currentTile = nextTile;
         nextTile = undefined;
       }
 
-      if (cars.length < 6) {
-        const car = randBetween([
+      if (vehicles.length < 10) {
+        const vehicle = randBetween([
           assets.car({
             direction: DIRECTION.LEFT,
             x: viewport.x + viewport.width * rand(1, 2),
@@ -74,14 +87,27 @@
             y: rand(20, 90),
             speed: rand(10, 15),
           }),
+          assets.truck({
+            direction: DIRECTION.LEFT,
+            x: viewport.x + viewport.width * rand(1, 2),
+            y: rand(112, 190),
+            speed: rand(8, 10),
+          }),
+          assets.truck({
+            direction: DIRECTION.RIGHT,
+            x: viewport.x - viewport.width * rand(0, 1),
+            y: rand(20, 90),
+            speed: rand(8, 10),
+          }),
         ]);
-
-        app.stage.addChild(car.value);
-        items.push(car);
+        if (!items.filter(isPhysicalAsset).some((item) => circle.distance(item, vehicle) < 30)) {
+          app.stage.addChild(vehicle.value);
+          items.push(vehicle);
+        }
       }
 
-      const moving = items.filter((item) => item.type == TYPE.PLAYER || item.type === TYPE.CAR) as (Player | Car)[];
-      collisionAvoidanceForces(cars, items);
+      const moving = items.filter(isMovingAsset);
+      collisionAvoidanceForces(vehicles, items);
 
       const [inside, outside] = objectsOutside(items, rect.extrude(viewport, viewport.width * 3, viewport.height));
       items = inside;
@@ -89,11 +115,9 @@
       app.stage.removeChild(...outside.map((item) => item.value));
 
       viewport.x = approach(player.x - 100, viewport.x, 0.05, 0.4);
-      // viewport.y = approach(player.y - 112, viewport.y, 0.05, 0.4);
-
       const input = pressedKeys();
 
-      if (player.speed > 0) {
+      if (player.speed !== 0) {
         if (input.ArrowRight) {
           player.direction = vec.rotate(player.direction, 0.03);
         }
@@ -102,14 +126,29 @@
         }
       }
 
-      player.speed = input.ArrowUp ? Math.min(2, player.speed + 0.1) : Math.max(0, player.speed - 0.2);
+      player.speed = input.ArrowUp
+        ? Math.min(2, player.speed + 0.1)
+        : input.ArrowDown
+          ? Math.max(-0.5, player.speed - 0.1)
+          : Math.max(0, player.speed - 0.2);
+
       player.velocity = vec.scale(player.direction, player.speed);
+
+      for (const other of items) {
+        if (player.speed > 0 && other != player && isPhysicalObject(other) && circle.distance(player, other) < 0) {
+          player.velocity = { x: 0, y: 0 };
+        }
+      }
 
       move(moving);
 
+      const xOrder = items.filter(isPhysicalAsset);
+      xOrder.sort((a, b) => a.y - b.y);
+      app.stage.addChild(...xOrder.map((item) => item.value));
+
       for (const item of items) {
         if (isMovingObject(item) && item.value instanceof AnimatedSprite) {
-          const angle = -Math.atan2(item.velocity.y, item.velocity.x) + 0.125 * Math.PI;
+          const angle = -Math.atan2(item.direction.y, item.direction.x) + 0.125 * Math.PI;
           const positiveAngle = (angle + 2 * Math.PI) % (2 * Math.PI);
           item.value.gotoAndStop(circle.angleToQuadrant(positiveAngle, 8));
         }
@@ -125,7 +164,7 @@
   });
 </script>
 
-<svelte:window on:keyup={onKeyUp} on:keydown={onKeyDown} />
+<svelte:window on:keyup={onKeyUp} on:keydown={onKeyDown} on:resize={onResize} />
 
 <div class="h-full w-full" role="presentation">
   <canvas class="h-full w-full" bind:this={canvas}></canvas>
