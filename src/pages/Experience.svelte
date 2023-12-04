@@ -189,8 +189,9 @@
         class="relative border-l-2 border-gunmetal pl-4 before:absolute before:-left-4 before:-top-1 before:h-7 before:w-7 before:content-mapPin"
       >
         <div>
-          <span class="text-ulrtramarine"> {experience.dates.from} - {experience.dates.to} </span> |
-          <a href={experience.companyLink} class="group relative">
+          <span class="text-ulrtramarine"> {experience.dates.from} - {experience.dates.to} </span>
+          <span class="hidden sm:inline">|</span>
+          <a href={experience.companyLink} class="group relative my-2 block sm:my-0 sm:inline">
             <img
               class="inline-block align-middle brightness-90 transition-all group-hover:brightness-100"
               style:height="{experience.logoHeight}px"
@@ -198,7 +199,8 @@
               alt={experience.logo}
               title={experience.company}
             />
-            | <span class="align-middle transition-all group-hover:brightness-125">{experience.location}</span>
+            |
+            <span class="align-middle transition-all group-hover:brightness-125">{experience.location}</span>
 
             <Tooltip>
               {experience.company}
