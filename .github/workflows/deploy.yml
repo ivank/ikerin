@@ -11,17 +11,13 @@ jobs:
 
     steps:
       - uses: actions/checkout@v3
+      - uses: superfly/flyctl-actions/setup-flyctl@master
       - uses: actions/setup-node@v4
         with:
           cache: yarn
-      - uses: 'google-github-actions/auth@v2'
-        with:
-          project_id: 'ikerin'
-          credentials_json: '${{ secrets.GOOGLE_CREDENTIALS }}'
       - run: yarn install
       - run: yarn test
       - run: yarn build
-      - uses: 'google-github-actions/upload-cloud-storage@v1'
-        with:
-          path: 'dist'
-          destination: 'ikerin.com'
+      - run: yarn deploy
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
