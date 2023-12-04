@@ -186,7 +186,7 @@
   <ol role="list" class="flex flex-col gap-14">
     {#each experiences as experience}
       <li
-        class="border-gunmetal before:content-mapPin relative border-l-2 pl-4 before:absolute before:-left-4 before:-top-1 before:h-7 before:w-7"
+        class="relative border-l-2 border-gunmetal pl-4 before:absolute before:-left-4 before:-top-1 before:h-7 before:w-7 before:content-mapPin"
       >
         <div>
           <span class="text-ulrtramarine"> {experience.dates.from} - {experience.dates.to} </span> |

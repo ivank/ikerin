@@ -1,7 +1,8 @@
-import { AnimatedSprite, Assets, Sprite } from 'pixi.js';
+import { AnimatedSprite, Assets, Container, DisplayObject } from 'pixi.js';
 import type { ActorObject, BgObject, PhysicalObject } from './engine';
 import * as vec from './vector';
 import * as rect from './rect';
+import * as circle from './circle';
 import { rand, randBetween } from './rand';
 
 export interface Base<TValue> {
@@ -150,4 +151,29 @@ export function isPhysicalAsset(item: Base<AnimatedSprite>): item is Vehicle | P
 
 export function isMovingAsset(item: Base<AnimatedSprite>): item is Vehicle | Player {
   return item.type === TYPE.VEHICLE || item.type === TYPE.PLAYER;
+}
+
+export function alignAnimationsToDirection(items: Array<Vehicle | Player>) {
+  for (const item of items) {
+    const angle = -Math.atan2(item.direction.y, item.direction.x) + 0.125 * Math.PI;
+    const positiveAngle = (angle + 2 * Math.PI) % (2 * Math.PI);
+    item.value.gotoAndStop(circle.angleToQuadrant(positiveAngle, 8));
+  }
+}
+
+export function renderAssetMovement(viewport: rect.Rect, items: Array<Vehicle | Player | Tree | Cow | Road>) {
+  for (const item of items) {
+    if (isPhysicalAsset(item)) {
+      item.value.x = -viewport.x + item.x - item.value.width / 2;
+      item.value.y = -viewport.y + item.y - item.value.height / 2;
+    } else {
+      item.value.x = -viewport.x + item.x;
+      item.value.y = -viewport.y + item.y;
+    }
+  }
+}
+
+export function reorderZIndex(stage: Container<DisplayObject>, items: Array<Vehicle | Player | Tree | Cow>) {
+  items.sort((a, b) => a.y - b.y);
+  stage.addChild(...items.map((item) => item.value));
 }

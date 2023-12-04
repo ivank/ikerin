@@ -2,14 +2,7 @@
   import { AnimatedSprite, Application } from 'pixi.js';
   import { onMount } from 'svelte';
   import { keyboardSetup } from './game/keyboard';
-  import {
-    move,
-    objectsOutside,
-    collisionAvoidanceForces,
-    isMovingObject,
-    approach,
-    isPhysicalObject,
-  } from './game/engine';
+  import { move, objectsOutside, collisionAvoidanceForces, approach, isPhysicalObject } from './game/engine';
   import {
     type RoadTile,
     type Cow,
@@ -22,6 +15,9 @@
     isVehicle,
     isMovingAsset,
     isPhysicalAsset,
+    alignAnimationsToDirection,
+    renderAssetMovement,
+    reorderZIndex,
   } from './game/assets';
   import * as rect from './game/rect';
   import * as vec from './game/vector';
@@ -106,9 +102,6 @@
         }
       }
 
-      const moving = items.filter(isMovingAsset);
-      collisionAvoidanceForces(vehicles, items);
-
       const [inside, outside] = objectsOutside(items, rect.extrude(viewport, viewport.width * 3, viewport.height));
       items = inside;
 
@@ -140,26 +133,11 @@
         }
       }
 
-      move(moving);
-
-      const xOrder = items.filter(isPhysicalAsset);
-      xOrder.sort((a, b) => a.y - b.y);
-      app.stage.addChild(...xOrder.map((item) => item.value));
-
-      for (const item of items) {
-        if (isMovingObject(item) && item.value instanceof AnimatedSprite) {
-          const angle = -Math.atan2(item.direction.y, item.direction.x) + 0.125 * Math.PI;
-          const positiveAngle = (angle + 2 * Math.PI) % (2 * Math.PI);
-          item.value.gotoAndStop(circle.angleToQuadrant(positiveAngle, 8));
-        }
-        if (isPhysicalObject(item)) {
-          item.value.x = -viewport.x + item.x - item.value.width / 2;
-          item.value.y = -viewport.y + item.y - item.value.height / 2;
-        } else {
-          item.value.x = -viewport.x + item.x;
-          item.value.y = -viewport.y + item.y;
-        }
-      }
+      collisionAvoidanceForces(vehicles, items);
+      move(items.filter(isMovingAsset));
+      reorderZIndex(app.stage, items.filter(isPhysicalAsset));
+      alignAnimationsToDirection(items.filter(isMovingAsset));
+      renderAssetMovement(viewport, items);
     });
   });
 </script>

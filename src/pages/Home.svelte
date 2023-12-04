@@ -43,7 +43,7 @@
   </div>
   <div class="relative hidden flex-grow xl:block">
     <div
-      class="bg-gradient-150deg from-plantation relative aspect-video rounded-lg border border-ebony to-aquamarine/5 p-6 shadow-inner shadow-white/30"
+      class="relative aspect-video rounded-lg border border-ebony bg-gradient-150deg from-plantation to-aquamarine/5 p-6 shadow-inner shadow-white/30"
     >
       <img class="absolute left-2 top-2" src={rivetSvg} alt="rivet" width="13" height="13" />
       <img class="absolute bottom-2 left-2" src={rivetSvg} alt="rivet" width="13" height="13" />

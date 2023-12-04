@@ -71,6 +71,12 @@ export function timeToCollision(actor: ActorObject, obj: MovingObject | Physical
   return tau < 0 ? Infinity : tau;
 }
 
+/**
+ * Change velocity based on the imminent collisions with obstacles
+ * Algorithm adopted from "Game AI Pro 2: Collected Wisdom of Game AI Professionals"
+ * @param actors
+ * @param obstacles
+ */
 export function collisionAvoidanceForces(
   actors: ActorObject[],
   obstacles: (MovingObject | PhysicalObject | BgObject)[],
