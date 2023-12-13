@@ -8,7 +8,7 @@
     "build": "vite build",
     "test": "vitest",
     "preview": "vite preview",
-    "deploy": "flyctl deploy --local-only"
+    "deploy": "flyctl deploy --remote-only"
   },
   "devDependencies": {
     "@sveltejs/vite-plugin-svelte": "^3.0.0",
