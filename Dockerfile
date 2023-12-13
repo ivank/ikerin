@@ -1,4 +1,4 @@
 FROM pierrezemb/gostatic
 COPY ./dist/ /srv/http/
 
-CMD ["--fallback", "index.html", "--port", "80"]
+CMD ["--fallback", "index.html"]
