@@ -5,6 +5,7 @@
   import riznSvg from '../assets/experiences/rizn.svg';
   import zenGuruPng from '../assets/experiences/zen-guru.png';
   import awsSvg from '../assets/tech/aws.svg';
+  import ectoSvg from '../assets/tech/ecto.svg';
   import braintreeSvg from '../assets/tech/braintree.svg';
   import cakePhpSvg from '../assets/tech/cake-php.svg';
   import clojureSvg from '../assets/tech/clojure.svg';
@@ -69,6 +70,7 @@
     circleCI: { icon: circleCISvg, title: 'CircleCI' },
     cypress: { icon: cypressSvg, title: 'CypressJS' },
     elixir: { icon: elixirSvg, title: 'Elixir' },
+    ecto: { icon: ectoSvg, title: 'Ecto' },
     bootstrap: { icon: bootstrapSvg, title: 'Twitter Bootstrap' },
     docker: { icon: dockerSvg, title: 'Docker' },
     fastify: { icon: fastifySvg, title: 'Fastify' },
@@ -114,7 +116,7 @@
       company: 'Sabbatical',
       companyLink: 'https://www.youtube.com/watch?v=HlWW-o9yXQI',
       dates: { from: 'March 2023', to: 'present' },
-      tech: [t.elixir, t.phoenix, t.chatgpt, t.svelte, t.react, t.redux, t.fastify, t.fly, t.vitest],
+      tech: [t.elixir, t.phoenix, t.ecto, t.chatgpt, t.svelte, t.react, t.redux, t.fastify, t.fly, t.vitest],
     },
     {
       role: 'Remote Team Lead',

@@ -4,6 +4,7 @@
   import calendarTodoSvg from '../assets/projects/calendar-todo.svg';
   import vanillaTuexDuexJpg from '../assets/projects/vanilla-tuexduex.jpg';
   import rpslsSvg from '../assets/projects/rpsls.svg';
+  import rocketsizedJpg from '../assets/projects/rocketsized.jpg';
 
   interface Project {
     title: string;
@@ -14,6 +15,13 @@
   }
 
   const projects: Project[] = [
+    {
+      title: 'rocketsized',
+      image: rocketsizedJpg,
+      description: 'A small hobby project to list and compare various launch vehicles against one another.',
+      backgroundSize: 'cover',
+      link: 'https://rocketsized.com',
+    },
     {
       title: 'potygen',
       image: potygenJpg,
